@@ -23,7 +23,7 @@ extern "C" {
 #define SERVER_PORT 8889
 #define COMM_PORT 8890
 #define MSG_PER_CORE 500000
-#define KEY_SPACE_SIZE 1000000
+#define KEY_SPACE_SIZE 27000000ull
 
 // Commands to serialize
 #define NON 5

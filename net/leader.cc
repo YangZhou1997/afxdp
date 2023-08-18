@@ -25,8 +25,8 @@ extern "C" {
 
 #define SERVER_PORT 8889
 #define COMM_PORT 8890
-#define KEY_SPACE_SIZE 1000000
 #define MSG_PER_CORE 500000
+#define KEY_SPACE_SIZE 27000000ull
 
 // Commands to serialize
 #define NON 5
@@ -226,23 +226,24 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  printf("Filling up Key-Value Store\n");
-  // Send SET requests to fill up key-value store
   char buffer[BUFFER_SZ];
-  for (int i = 0; i < KEY_SPACE_SIZE; ++i) {
-    uint64_t key = i;
-    int buf_len = serialize(SET, key, VALUE_SIZE, buffer);
-    ssize_t bytes_sent;
-    bytes_sent =
-        sendto(sockfd, buffer, buf_len, MSG_WAITALL,
-               (struct sockaddr*)&server_addr, (socklen_t)sizeof(server_addr));
-    if (bytes_sent < 0) {
-      perror("Sendto failed");
-      exit(EXIT_FAILURE);
-    }
-    int bytes_received = recvfrom(sockfd, buffer, BUFFER_SZ, MSG_WAITALL,
-                                  (struct sockaddr*)&server_addr, &addr_len);
-  }
+
+  // printf("Filling up Key-Value Store\n");
+  // // Send SET requests to fill up key-value store
+  // for (int i = 0; i < KEY_SPACE_SIZE; ++i) {
+  //   uint64_t key = i;
+  //   int buf_len = serialize(SET, key, VALUE_SIZE, buffer);
+  //   ssize_t bytes_sent;
+  //   bytes_sent =
+  //       sendto(sockfd, buffer, buf_len, MSG_WAITALL,
+  //              (struct sockaddr*)&server_addr, (socklen_t)sizeof(server_addr));
+  //   if (bytes_sent < 0) {
+  //     perror("Sendto failed");
+  //     exit(EXIT_FAILURE);
+  //   }
+  //   int bytes_received = recvfrom(sockfd, buffer, BUFFER_SZ, MSG_WAITALL,
+  //                                 (struct sockaddr*)&server_addr, &addr_len);
+  // }
 
   pthread_t follower_threads[num_followers];
   for (size_t i = 0; i < num_followers; ++i) {

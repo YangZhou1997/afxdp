@@ -2,7 +2,7 @@
 
 #include <random>
 
-#define VALUE_SIZE 64
+#define VALUE_SIZE 40
 
 inline int IntRand(const int &min, const int &max) {  // return [min, max)
   static thread_local std::mt19937 generator(std::random_device{}());

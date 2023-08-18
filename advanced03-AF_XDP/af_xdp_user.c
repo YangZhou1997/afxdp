@@ -31,8 +31,9 @@
 #include "../common/common_libbpf.h"
 #include "../common/common_params.h"
 #include "../common/common_user_bpf_xdp.h"
+#include "fasthash.h"
 
-#define VALUE_SIZE 64
+#define VALUE_SIZE 40
 
 #define NUM_FRAMES 4096
 #define FRAME_SIZE XSK_UMEM__DEFAULT_FRAME_SIZE
@@ -52,7 +53,9 @@
 #define SRC_PORT 8889
 #define DST_PORT 8889
 #define MAX_BUFFER_SIZE 1500
-#define TABLE_SIZE 7000000
+#define ENTRY_PER_BUCKET 4
+#define TABLE_SIZE (80000000ull / ENTRY_PER_BUCKET)
+#define KEY_SPACE_SIZE 27000000ull
 
 #define NON 5
 #define SET 6
@@ -137,7 +140,9 @@ int pin_thread_to_core(int core_id) {
 }
 
 // Simple hash function for unsigned integers
-uint64_t hash_key(uint64_t key) { return key % TABLE_SIZE; }
+uint64_t hash_key(uint64_t key) {
+  return fasthash64((void*)&key, sizeof(uint64_t), 0xdeadbeef) % TABLE_SIZE;
+}
 
 void initialize_hashtable(Node** hashtable) {
   for (int i = 0; i < TABLE_SIZE; ++i) {
@@ -179,7 +184,7 @@ void table_set(Node** hashtable, uint64_t key, char* value, Spinlock* locks) {
 
   // If we didn't find the key, then add new node to head of linked list in O(1)
   Node* new_node = malloc(sizeof(Node));
-  new_node->next = head;
+  new_node->next = hashtable[hash];
   new_node->key = key;
   new_node->value = value;
   hashtable[hash] = new_node;
@@ -230,6 +235,13 @@ void table_delete(Node** hashtable, uint64_t key, Spinlock* locks) {
     prev = prev->next;
   }
   pthread_spin_unlock(&locks[hash].lock);
+}
+
+void fillup_hashtable(Node** hashtable, Spinlock* locks) {
+  for (int i = 0; i < KEY_SPACE_SIZE; ++i) {
+    char* value = (char*)malloc(VALUE_SIZE);
+    table_set(hashtable, i, value, locks);
+  }
 }
 
 static inline __u32 xsk_ring_prod__free(struct xsk_ring_prod* r) {
@@ -893,6 +905,9 @@ int main(int argc, char** argv) {
   // Initialize the hashtable, which will serve as the in-memory key-value store
   Node** hashtable = (Node**)malloc(TABLE_SIZE * sizeof(Node*));
   initialize_hashtable(hashtable);
+  fillup_hashtable(hashtable, locks);
+
+  printf("Hash table filled up\n");
 
   struct threadArgs* threadArgs_ar[NUM_THREADS];
   for (int th_idx = 0; th_idx < NUM_THREADS; ++th_idx) {

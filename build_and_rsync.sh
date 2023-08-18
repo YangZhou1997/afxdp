@@ -28,7 +28,7 @@ sudo systemctl stop irqbalance
     # let CPU=$(((CPU+1)%ncpu))
 done)
 
-# ./leader 3 40 192.168.6.3 192.168.6.4 192.168.6.5
 # ./follower 40 192.168.6.3
 # ./follower 40 192.168.6.4
 # ./follower 40 192.168.6.5
+# ./leader 3 40 192.168.6.3 192.168.6.4 192.168.6.5
