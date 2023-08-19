@@ -24,6 +24,7 @@ extern "C" {
 #define COMM_PORT 8890
 #define MSG_PER_CORE 500000
 #define KEY_SPACE_SIZE 27000000ull
+#define NON_EXISTING_KEY_SPACE_SIZE ((uint64_t)(KEY_SPACE_SIZE * 3 / 7))
 
 // Commands to serialize
 #define NON 5
@@ -75,9 +76,9 @@ void* send_message(void* arg) {
   double total_latency = 0;
   char buffer[BUFFER_SZ];
   for (int i = 0; i < MSG_PER_CORE; ++i) {
-    uint64_t key =
-        IntRand(0, KEY_SPACE_SIZE - 1);  // random key.  This is probably ideal
-                                         // for minimizing hash collisions
+    uint64_t key = IntRand(0, KEY_SPACE_SIZE + NON_EXISTING_KEY_SPACE_SIZE -
+                                  1);  // random key.  This is probably ideal
+                                       // for minimizing hash collisions
     int buf_len = serialize(GET, key, VALUE_SIZE, buffer);
     ssize_t bytes_sent;
 

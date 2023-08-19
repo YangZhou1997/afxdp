@@ -495,7 +495,8 @@ static bool process_packet(struct xsk_socket_info* xsk, uint64_t addr,
 #if VALUE_SIZE == 0
       DONT_OPTIMIZE(value_get);
 #else
-      memcpy(payload_data, value_get, VALUE_SIZE);
+      if (value_get)
+        memcpy(payload_data, value_get, VALUE_SIZE);
 #endif
       countAr[idx].count += 1;
       break;
